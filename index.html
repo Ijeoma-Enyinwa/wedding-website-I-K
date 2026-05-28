@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ijeoma & Kenechi - Wedding Invitation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Playfair+Display:wght@400;500;600;700&family=Lato:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Intro Video Overlay -->
+    <div id="intro-overlay">
+        <div class="intro-content">
+            <video id="intro-video" muted playsinline>
+                <source src="videos/intro.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+            <div class="tap-hint">
+                <i class="fas fa-hand-pointer"></i>
+                <p>Tap anywhere to begin</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Music Toggle -->
+    <button id="music-toggle" class="music-toggle">
+        <i class="fas fa-music"></i>
+    </button>
+    <audio id="background-music" loop>
+        <source src="audio/wedding-music.mp3" type="audio/mp3">
+    </audio>
+
+    <!-- Day/Night Toggle -->
+    <button id="theme-toggle" class="theme-toggle">
+        <i class="fas fa-sun"></i>
+    </button>
+
+    <!-- Main Content -->
+    <div id="main-content" class="hidden">
+        <!-- Hero Section -->
+        <section class="hero" id="home">
+            <div class="hero-bg"></div>
+            <div class="hero-content">
+                <h1 class="couple-names">
+                    <span class="bride">Ijeoma</span>
+                    <span class="amp">&</span>
+                    <span class="groom">Kenechi</span>
+                </h1>
+                <p class="hero-subtitle">We're Getting Married!</p>
+                <div class="scroll-indicator">
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
+        </section>
+
+        <!-- Countdown Section -->
+        <section class="countdown-section">
+            <div class="container">
+                <h2 class="section-title">Countdown to Our Special Day</h2>
+                <div class="countdown">
+                    <div class="countdown-item">
+                        <span class="countdown-number" id="days">00</span>
+                        <span class="countdown-label">Days</span>
+                    </div>
+                    <div class="countdown-item">
+                        <span class="countdown-number" id="hours">00</span>
+                        <span class="countdown-label">Hours</span>
+                    </div>
+                    <div class="countdown-item">
+                        <span class="countdown-number" id="minutes">00</span>
+                        <span class="countdown-label">Minutes</span>
+                    </div>
+                    <div class="countdown-item">
+                        <span class="countdown-number" id="seconds">00</span>
+                        <span class="countdown-label">Seconds</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Story Section -->
+        <section class="story-section tan-bg">
+            <div class="container">
+                <h2 class="section-title">Our Love Story</h2>
+                <div class="story-content">
+                    <p>Two hearts, one love. Join us as we celebrate the beginning of our forever together.</p>
+                    <p>We invite you to share in our joy as we exchange vows and start this beautiful journey together.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Scratch Card Section -->
+        <section class="scratch-section burnt-orange-bg">
+            <div class="container">
+                <h2 class="section-title text-light">Reveal The Date</h2>
+                <p class="scratch-instruction text-light">Scratch to reveal our wedding date!</p>
+                <div class="scratch-container">
+                    <canvas id="scratch-canvas"></canvas>
+                    <div class="revealed-content">
+                        <h3>July 25th, 2026</h3>
+                        <p>Lagos, Nigeria</p>
+                        <div class="heart-decoration">
+                            <i class="fas fa-heart"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Venue Section -->
+        <section class="venue-section brown-bg">
+            <div class="container">
+                <h2 class="section-title text-light">Wedding Venue</h2>
+                <div class="venue-info">
+                    <div class="venue-details">
+                        <h3>Catholic Church of Transfiguration</h3>
+                        <p><i class="fas fa-clock"></i> 9:00 AM</p>
+                        <p><i class="fas fa-map-marker-alt"></i> VGC, Lagos, Nigeria</p>
+                    </div>
+                </div>
+                
+                <!-- Map (Hidden until form submitted) -->
+                <div id="map-container" class="map-container hidden">
+                    <div id="map"></div>
+                    <a href="https://www.google.com/maps/search/Catholic+Church+of+Transfiguration+VGC+Lagos" target="_blank" class="btn btn-light">
+                        <i class="fas fa-directions"></i> Get Directions
+                    </a>
+                </div>
+                
+                <p id="map-message" class="map-message text-light">Fill out the RSVP form below to reveal the location map</p>
+            </div>
+        </section>
+
+        <!-- Photo Gallery Section -->
+        <section class="gallery-section tan-bg">
+            <div class="container">
+                <h2 class="section-title">Our Moments</h2>
+                <div class="gallery-grid">
+                    <div class="gallery-item">
+                        <img src="images/gallery/photo1.jpg" alt="Couple moment 1" loading="lazy">
+                    </div>
+                    <div class="gallery-item">
+                        <img src="images/gallery/photo2.jpg" alt="Couple moment 2" loading="lazy">
+                    </div>
+                    <div class="gallery-item">
+                        <img src="images/gallery/photo3.jpg" alt="Couple moment 3" loading="lazy">
+                    </div>
+                    <div class="gallery-item">
+                        <img src="images/gallery/photo4.jpg" alt="Couple moment 4" loading="lazy">
+                    </div>
+                    <div class="gallery-item">
+                        <img src="images/gallery/photo5.jpg" alt="Couple moment 5" loading="lazy">
+                    </div>
+                    <div class="gallery-item">
+                        <img src="images/gallery/photo6.jpg" alt="Couple moment 6" loading="lazy">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- RSVP Form Section -->
+        <section class="rsvp-section green-bg">
+            <div class="container">
+                <h2 class="section-title text-light">RSVP</h2>
+                <p class="form-subtitle text-light">Please fill out the form below to confirm your attendance</p>
+                
+                <form id="rsvp-form" class="rsvp-form">
+                    <div class="form-group">
+                        <label for="name" class="text-light">Full Name</label>
+                        <input type="text" id="name" name="name" required placeholder="Enter your full name">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="email" class="text-light">Email Address</label>
+                        <input type="email" id="email" name="email" required placeholder="Enter your email">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="phone" class="text-light">Phone Number</label>
+                        <input type="tel" id="phone" name="phone" required placeholder="Enter your phone number">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="guests" class="text-light">Number of Guests</label>
+                        <select id="guests" name="guests" required>
+                            <option value="">Select number of guests</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5+">5+</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="attendance" class="text-light">Will you attend?</label>
+                        <select id="attendance" name="attendance" required>
+                            <option value="">Select your response</option>
+                            <option value="yes">Joyfully Accepts</option>
+                            <option value="no">Regretfully Declines</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="message" class="text-light">Message to the Couple</label>
+                        <textarea id="message" name="message" rows="4" placeholder="Write your message here..."></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-submit">
+                        <i class="fas fa-paper-plane"></i> Submit RSVP
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer burnt-orange-bg">
+            <div class="container">
+                <p class="footer-text text-light">Made with <i class="fas fa-heart"></i> for Ijeoma & Kenechi</p>
+                <p class="footer-date text-light">July 25th, 2026</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Confetti Container -->
+    <div id="confetti-container"></div>
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap" async defer></script>
+    <script src="script.js"></script>
+</body>
+</html>
