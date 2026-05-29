@@ -1,234 +1,452 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-GB">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ijeoma & Kenechi - Wedding Invitation</title>
+    <title>Ijeoma & Kenechi | Holy Matrimony</title>
+
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Playfair+Display:wght@400;500;600;700&family=Lato:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+
+    <!-- CSS -->
     <link rel="stylesheet" href="styles.css">
+
+    <!-- JS Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
-<body>
-    <!-- Intro Video Overlay -->
-    <div id="intro-overlay">
-        <div class="intro-content">
-            <video id="intro-video" muted playsinline>
-                <source src="videos/intro.mp4" type="video/mp4">
-                Your browser does not support the video tag.
-            </video>
+<body class="day-mode">
+    <!-- 1. 🎬 INTRO VIDEO SCREEN -->
+    <div id="intro-screen">
+        <video id="intro-video" preload="auto" playsinline>
+            <source src="intro.mp4" type="video/mp4">
+        </video>
+        <div class="intro-overlay">
+            <button id="skip-video" class="skip-btn hidden">Skip</button>
             <div class="tap-hint">
-                <i class="fas fa-hand-pointer"></i>
-                <p>Tap anywhere to begin</p>
+                <span>✦ Tap to Begin ✦</span>
             </div>
         </div>
     </div>
 
-    <!-- Music Toggle -->
-    <button id="music-toggle" class="music-toggle">
-        <i class="fas fa-music"></i>
+    <!-- Floating Music Toggle (Always visible after intro) -->
+    <button id="music-toggle" class="floating-btn hidden" aria-label="Toggle Music">
+        <span class="icon">♪</span>
     </button>
-    <audio id="background-music" loop>
-        <source src="audio/wedding-music.mp3" type="audio/mp3">
+    <audio id="bg-music" loop>
+        <source src="music.mp3" type="audio/mpeg">
     </audio>
 
-    <!-- Day/Night Toggle -->
-    <button id="theme-toggle" class="theme-toggle">
-        <i class="fas fa-sun"></i>
-    </button>
+    <!-- Top Nav with Theme Toggle -->
+    <nav id="top-nav" class="hidden">
+        <div class="initials">I & K</div>
+        <button id="theme-toggle" class="theme-pill">
+            <span class="theme-icon">🌙</span>
+            <span class="theme-label">Night</span>
+        </button>
+    </nav>
 
-    <!-- Main Content -->
-    <div id="main-content" class="hidden">
-        <!-- Hero Section -->
-        <section class="hero" id="home">
-            <div class="hero-bg"></div>
-            <div class="hero-content">
+    <main id="main-site" class="hidden">
+        <!-- 2. 🌸 HERO SECTION -->
+        <section id="hero">
+            <img src="hero.jpg" alt="Ijeoma & Kenechi" class="hero-img" loading="eager" fetchpriority="high">
+            <div class="hero-overlay">
                 <h1 class="couple-names">
                     <span class="bride">Ijeoma</span>
                     <span class="amp">&</span>
                     <span class="groom">Kenechi</span>
                 </h1>
-                <p class="hero-subtitle">We're Getting Married!</p>
-                <div class="scroll-indicator">
-                    <i class="fas fa-chevron-down"></i>
+                <div class="hero-ornament">
+                    <svg width="60" height="60" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M50 10C35 10 25 25 25 40C25 60 50 90 50 90C50 90 75 60 75 40C75 25 65 10 50 10Z" stroke="currentColor" stroke-width="2"/>
+                        <circle cx="50" cy="35" r="10" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                </div>
+                <div class="scroll-hint">
+                    <div class="line"></div>
                 </div>
             </div>
         </section>
 
-        <!-- Countdown Section -->
-        <section class="countdown-section">
+        <!-- 3. 🎴 SAVE THE DATE — SCRATCH CARDS -->
+        <section id="save-the-date">
             <div class="container">
-                <h2 class="section-title">Countdown to Our Special Day</h2>
-                <div class="countdown">
-                    <div class="countdown-item">
-                        <span class="countdown-number" id="days">00</span>
-                        <span class="countdown-label">Days</span>
+                <h2 class="section-heading">Save the Date</h2>
+                <p class="sub-label">Scratch each card to uncover the date</p>
+
+                <div class="scratch-cards-container">
+                    <div class="scratch-card-wrapper">
+                        <span class="card-label">DAY</span>
+                        <div class="scratch-card" id="card-day">
+                            <canvas class="scratch-canvas"></canvas>
+                            <div class="card-content">25th</div>
+                        </div>
+                        <span class="scratch-hint">↑ Scratch</span>
                     </div>
-                    <div class="countdown-item">
-                        <span class="countdown-number" id="hours">00</span>
-                        <span class="countdown-label">Hours</span>
+                    <div class="scratch-card-wrapper">
+                        <span class="card-label">MONTH</span>
+                        <div class="scratch-card" id="card-month">
+                            <canvas class="scratch-canvas"></canvas>
+                            <div class="card-content">Jul</div>
+                        </div>
+                        <span class="scratch-hint">↑ Scratch</span>
                     </div>
-                    <div class="countdown-item">
-                        <span class="countdown-number" id="minutes">00</span>
-                        <span class="countdown-label">Minutes</span>
+                    <div class="scratch-card-wrapper">
+                        <span class="card-label">YEAR</span>
+                        <div class="scratch-card" id="card-year">
+                            <canvas class="scratch-canvas"></canvas>
+                            <div class="card-content">2026</div>
+                        </div>
+                        <span class="scratch-hint">↑ Scratch</span>
                     </div>
-                    <div class="countdown-item">
-                        <span class="countdown-number" id="seconds">00</span>
-                        <span class="countdown-label">Seconds</span>
-                    </div>
+                </div>
+
+                <div id="reveal-after-scratch" class="hidden">
+                    <div class="revealed-date">25th July, 2026</div>
+                    <div class="revealed-location">Lagos, Nigeria</div>
+                    <a href="#" id="add-to-calendar" class="btn-primary">📅 Add to Calendar</a>
                 </div>
             </div>
         </section>
 
-        <!-- Story Section -->
-        <section class="story-section tan-bg">
+        <!-- 4. ⏳ COUNTDOWN TIMER -->
+        <section id="countdown" class="hidden">
             <div class="container">
-                <h2 class="section-title">Our Love Story</h2>
-                <div class="story-content">
-                    <p>Two hearts, one love. Join us as we celebrate the beginning of our forever together.</p>
-                    <p>We invite you to share in our joy as we exchange vows and start this beautiful journey together.</p>
+                <h2 class="section-heading italic">Come celebrate with us!</h2>
+                <div class="timer-grid">
+                    <div class="timer-item">
+                        <span id="days" class="number">00</span>
+                        <span class="label">DAYS</span>
+                    </div>
+                    <div class="timer-item">
+                        <span id="hours" class="number">00</span>
+                        <span class="label">HOURS</span>
+                    </div>
+                    <div class="timer-item">
+                        <span id="minutes" class="number">00</span>
+                        <span class="label">MINS</span>
+                    </div>
+                    <div class="timer-item">
+                        <span id="seconds" class="number">00</span>
+                        <span class="label">SECS</span>
+                    </div>
+                </div>
+                <div class="countdown-date">25th · July · 2026</div>
+            </div>
+        </section>
+
+        <!-- 5. 🎨 COLOUR OF THE DAY -->
+        <section id="colour-of-the-day">
+            <div class="container">
+                <h2 class="section-heading">Colour of the Day</h2>
+                <p class="sub-label">Dress Code</p>
+                <div class="swatches">
+                    <div class="swatch-item">
+                        <div class="swatch-box" style="background-color: #D2B48C;"></div>
+                        <span class="swatch-name">Tan</span>
+                        <span class="swatch-hex">#D2B48C</span>
+                    </div>
+                    <div class="swatch-item">
+                        <div class="swatch-box" style="background-color: #CC5500;"></div>
+                        <span class="swatch-name">Burnt Orange</span>
+                        <span class="swatch-hex">#CC5500</span>
+                    </div>
+                    <div class="swatch-item">
+                        <div class="swatch-box" style="background-color: #4A7C59;"></div>
+                        <span class="swatch-name">Sage Green</span>
+                        <span class="swatch-hex">#4A7C59</span>
+                    </div>
+                </div>
+                <p class="dress-code-note">Please dress in the colours above. We cannot wait to see you shine!</p>
+                <div class="official-note">
+                    ✨ The official colour of the day will be confirmed closer to the event. Stay tuned!
                 </div>
             </div>
         </section>
 
-        <!-- Scratch Card Section -->
-        <section class="scratch-section burnt-orange-bg">
+        <!-- 6. ⛪ HOLY MATRIMONY DETAILS -->
+        <section id="holy-matrimony" class="hidden">
             <div class="container">
-                <h2 class="section-title text-light">Reveal The Date</h2>
-                <p class="scratch-instruction text-light">Scratch to reveal our wedding date!</p>
-                <div class="scratch-container">
-                    <canvas id="scratch-canvas"></canvas>
-                    <div class="revealed-content">
-                        <h3>July 25th, 2026</h3>
-                        <p>Lagos, Nigeria</p>
-                        <div class="heart-decoration">
-                            <i class="fas fa-heart"></i>
+                <h2 class="section-heading">Holy Matrimony</h2>
+                <div class="details-content">
+                    <p class="venue-name">Catholic Church of the Transfiguration, VGC</p>
+                    <p class="venue-city">Lagos, Nigeria</p>
+                    <p class="wedding-time">9:00 AM · 25th July 2026</p>
+                    <p class="tagline">"Join us as we make our vows before God, family, and friends on this most blessed of days."</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 7. 🖼️ ANIMATED PHOTO CAROUSEL -->
+        <section id="moments-carousel">
+            <div class="container">
+                <h2 class="section-heading italic">Moments Together</h2>
+                <p class="sub-label cinzel">A few of our favourite memories</p>
+            </div>
+            <div class="carousel-container">
+                <button class="carousel-nav prev">❮</button>
+                <div class="carousel-track-container">
+                    <div class="carousel-track" id="carousel-slots">
+                        <!-- 6 Slots -->
+                        <div class="carousel-slide" data-index="0">
+                            <input type="file" accept="image/*" class="file-input hidden">
+                            <div class="upload-placeholder">
+                                <span class="icon">🌸</span>
+                                <span>Upload Photo</span>
+                            </div>
+                            <div class="image-number">1 / 6</div>
+                        </div>
+                        <div class="carousel-slide" data-index="1">
+                            <input type="file" accept="image/*" class="file-input hidden">
+                            <div class="upload-placeholder">
+                                <span class="icon">🌸</span>
+                                <span>Upload Photo</span>
+                            </div>
+                            <div class="image-number">2 / 6</div>
+                        </div>
+                        <div class="carousel-slide" data-index="2">
+                            <input type="file" accept="image/*" class="file-input hidden">
+                            <div class="upload-placeholder">
+                                <span class="icon">🌸</span>
+                                <span>Upload Photo</span>
+                            </div>
+                            <div class="image-number">3 / 6</div>
+                        </div>
+                        <div class="carousel-slide" data-index="3">
+                            <input type="file" accept="image/*" class="file-input hidden">
+                            <div class="upload-placeholder">
+                                <span class="icon">🌸</span>
+                                <span>Upload Photo</span>
+                            </div>
+                            <div class="image-number">4 / 6</div>
+                        </div>
+                        <div class="carousel-slide" data-index="4">
+                            <input type="file" accept="image/*" class="file-input hidden">
+                            <div class="upload-placeholder">
+                                <span class="icon">🌸</span>
+                                <span>Upload Photo</span>
+                            </div>
+                            <div class="image-number">5 / 6</div>
+                        </div>
+                        <div class="carousel-slide" data-index="5">
+                            <input type="file" accept="image/*" class="file-input hidden">
+                            <div class="upload-placeholder">
+                                <span class="icon">🌸</span>
+                                <span>Upload Photo</span>
+                            </div>
+                            <div class="image-number">6 / 6</div>
+                        </div>
+                    </div>
+                </div>
+                <button class="carousel-nav next">❯</button>
+                <div class="carousel-dots"></div>
+            </div>
+        </section>
+
+        <!-- 8. 📋 RSVP / CELEBRATION FORM -->
+        <section id="rsvp">
+            <div class="container">
+                <div class="rsvp-header">
+                    <h2 class="rsvp-title">RSVP</h2>
+                    <h3 class="section-heading">Join the Celebration</h3>
+                    <p class="sub-label">A few fun questions before the big day!</p>
+                    <div class="ornament"></div>
+                </div>
+
+                <form name="rsvp" method="POST" data-netlify="true" id="rsvp-form">
+                    <div class="form-section">
+                        <h4>Guest Details</h4>
+                        <div class="form-group">
+                            <label for="guest-name">Your Name <span class="required">*</span></label>
+                            <input type="text" id="guest-name" name="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="guest-phone">Phone Number <span class="required">*</span></label>
+                            <input type="tel" id="guest-phone" name="phone" required>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h4>Make a Guess</h4>
+                        <label>Who will get emotional first?</label>
+                        <div class="pill-group">
+                            <input type="radio" name="emotional" value="Ijeoma" id="guess-ijeoma" class="pill-radio">
+                            <label for="guess-ijeoma" class="pill-label">I · Ijeoma</label>
+
+                            <input type="radio" name="emotional" value="Kenechi" id="guess-kenechi" class="pill-radio">
+                            <label for="guess-kenechi" class="pill-label">K · Kenechi</label>
+
+                            <input type="radio" name="emotional" value="Both" id="guess-both" class="pill-radio">
+                            <label for="guess-both" class="pill-label">B · Both</label>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h4>Your Wedding Mood</h4>
+                        <label>I'm coming for...</label>
+                        <div class="pill-group">
+                            <input type="checkbox" name="mood" value="Food" id="mood-food" class="pill-checkbox">
+                            <label for="mood-food" class="pill-label">The Food 🍛</label>
+
+                            <input type="checkbox" name="mood" value="Dance" id="mood-dance" class="pill-checkbox">
+                            <label for="mood-dance" class="pill-label">Dance Floor 💃</label>
+
+                            <input type="checkbox" name="mood" value="Love" id="mood-love" class="pill-checkbox">
+                            <label for="mood-love" class="pill-label">The Love ❤️</label>
+
+                            <input type="checkbox" name="mood" value="All" id="mood-all" class="pill-checkbox">
+                            <label for="mood-all" class="pill-label">All of It ✨</label>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h4>Leave Us a Note</h4>
+                        <label for="guest-note">Share a Wish or Memory</label>
+                        <textarea id="guest-note" name="note"></textarea>
+                        <p class="form-note italic">🔥 This becomes a digital memory book.</p>
+                    </div>
+
+                    <div class="form-section">
+                        <h4>Words for Forever</h4>
+                        <label for="guest-advice">Advice for Married Life</label>
+                        <textarea id="guest-advice" name="advice"></textarea>
+                    </div>
+
+                    <button type="submit" class="submit-btn">Send Love 💛</button>
+                </form>
+
+                <div id="rsvp-success" class="hidden">
+                    <p class="success-msg">Thank you, your love is received!</p>
+                    <p class="success-details">We can't wait to celebrate with you on the 25th of July, 2026. Your message has been added to our digital memory book.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 9. 🗺️ VENUE MAP -->
+        <section id="venue-map" class="hidden">
+            <div class="container">
+                <h2 class="section-heading">The Venue</h2>
+                <p class="venue-address">Catholic Church of the Transfiguration, VGC, Lagos</p>
+                <div class="map-wrapper">
+                    <iframe
+                        id="google-map"
+                        width="100%"
+                        height="420"
+                        style="border:0"
+                        loading="lazy"
+                        allowfullscreen
+                        referrerpolicy="no-referrer-when-downgrade"
+                        src="https://www.google.com/maps/embed/v1/place?key=YOUR_API_KEY&q=Catholic+Church+of+Transfiguration+VGC+Lagos">
+                    </iframe>
+                </div>
+                <div class="venue-card">
+                    <div class="venue-info-item">
+                        <span class="icon">📍</span>
+                        <p>Catholic Church of the Transfiguration, VGC, Lagos</p>
+                    </div>
+                    <div class="venue-info-item">
+                        <span class="icon">🕘</span>
+                        <p>9:00 AM · Saturday, 25th July 2026</p>
+                    </div>
+                    <a href="https://www.google.com/maps/search/Catholic+Church+of+Transfiguration+VGC+Lagos" target="_blank" class="btn-directions">Get Directions</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- 10. 📸 PHOTO GALLERY -->
+        <section id="photo-gallery">
+            <div class="container">
+                <h2 class="section-heading">Our Gallery</h2>
+                <div class="gallery-grid">
+                    <!-- 6 Slots -->
+                    <div class="gallery-slot" data-index="0">
+                        <input type="file" accept="image/*" class="file-input hidden">
+                        <div class="upload-placeholder">
+                            <span class="icon">🌸</span>
+                            <span>Upload Photo</span>
+                        </div>
+                    </div>
+                    <div class="gallery-slot" data-index="1">
+                        <input type="file" accept="image/*" class="file-input hidden">
+                        <div class="upload-placeholder">
+                            <span class="icon">🌸</span>
+                            <span>Upload Photo</span>
+                        </div>
+                    </div>
+                    <div class="gallery-slot" data-index="2">
+                        <input type="file" accept="image/*" class="file-input hidden">
+                        <div class="upload-placeholder">
+                            <span class="icon">🌸</span>
+                            <span>Upload Photo</span>
+                        </div>
+                    </div>
+                    <div class="gallery-slot" data-index="3">
+                        <input type="file" accept="image/*" class="file-input hidden">
+                        <div class="upload-placeholder">
+                            <span class="icon">🌸</span>
+                            <span>Upload Photo</span>
+                        </div>
+                    </div>
+                    <div class="gallery-slot" data-index="4">
+                        <input type="file" accept="image/*" class="file-input hidden">
+                        <div class="upload-placeholder">
+                            <span class="icon">🌸</span>
+                            <span>Upload Photo</span>
+                        </div>
+                    </div>
+                    <div class="gallery-slot" data-index="5">
+                        <input type="file" accept="image/*" class="file-input hidden">
+                        <div class="upload-placeholder">
+                            <span class="icon">🌸</span>
+                            <span>Upload Photo</span>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Venue Section -->
-        <section class="venue-section brown-bg">
+        <!-- 11. 🖼️ FINAL SECTION + THANK YOU -->
+        <section id="final-thank-you">
             <div class="container">
-                <h2 class="section-title text-light">Wedding Venue</h2>
-                <div class="venue-info">
-                    <div class="venue-details">
-                        <h3>Catholic Church of Transfiguration</h3>
-                        <p><i class="fas fa-clock"></i> 9:00 AM</p>
-                        <p><i class="fas fa-map-marker-alt"></i> VGC, Lagos, Nigeria</p>
+                <h2 class="section-heading italic">Thank You</h2>
+                <div class="final-image-slot">
+                    <input type="file" accept="image/*" class="file-input hidden">
+                    <div class="upload-placeholder">
+                        <span class="icon">🌸</span>
+                        <span>Upload Photo</span>
                     </div>
                 </div>
-                
-                <!-- Map (Hidden until form submitted) -->
-                <div id="map-container" class="map-container hidden">
-                    <div id="map"></div>
-                    <a href="https://www.google.com/maps/search/Catholic+Church+of+Transfiguration+VGC+Lagos" target="_blank" class="btn btn-light">
-                        <i class="fas fa-directions"></i> Get Directions
-                    </a>
+                <div class="gold-divider"></div>
+                <div class="thank-you-message">
+                    <p>"With all our hearts, thank you for being part of our love story."</p>
+                    <p>"We cannot wait to share this blessed day with you."</p>
+                    <p class="signature">— Ijeoma & Kenechi</p>
                 </div>
-                
-                <p id="map-message" class="map-message text-light">Fill out the RSVP form below to reveal the location map</p>
+                <div class="final-ornament">✦ ♡ ✦</div>
             </div>
         </section>
 
-        <!-- Photo Gallery Section -->
-        <section class="gallery-section tan-bg">
+        <!-- 12. FOOTER -->
+        <footer>
             <div class="container">
-                <h2 class="section-title">Our Moments</h2>
-                <div class="gallery-grid">
-                    <div class="gallery-item">
-                        <img src="images/gallery/photo1.jpg" alt="Couple moment 1" loading="lazy">
-                    </div>
-                    <div class="gallery-item">
-                        <img src="images/gallery/photo2.jpg" alt="Couple moment 2" loading="lazy">
-                    </div>
-                    <div class="gallery-item">
-                        <img src="images/gallery/photo3.jpg" alt="Couple moment 3" loading="lazy">
-                    </div>
-                    <div class="gallery-item">
-                        <img src="images/gallery/photo4.jpg" alt="Couple moment 4" loading="lazy">
-                    </div>
-                    <div class="gallery-item">
-                        <img src="images/gallery/photo5.jpg" alt="Couple moment 5" loading="lazy">
-                    </div>
-                    <div class="gallery-item">
-                        <img src="images/gallery/photo6.jpg" alt="Couple moment 6" loading="lazy">
-                    </div>
+                <div class="footer-info">
+                    I & K · 25 · VII · 2026 · Lagos, Nigeria · Holy Matrimony
                 </div>
-            </div>
-        </section>
-
-        <!-- RSVP Form Section -->
-        <section class="rsvp-section green-bg">
-            <div class="container">
-                <h2 class="section-title text-light">RSVP</h2>
-                <p class="form-subtitle text-light">Please fill out the form below to confirm your attendance</p>
-                
-                <form id="rsvp-form" class="rsvp-form">
-                    <div class="form-group">
-                        <label for="name" class="text-light">Full Name</label>
-                        <input type="text" id="name" name="name" required placeholder="Enter your full name">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="email" class="text-light">Email Address</label>
-                        <input type="email" id="email" name="email" required placeholder="Enter your email">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="phone" class="text-light">Phone Number</label>
-                        <input type="tel" id="phone" name="phone" required placeholder="Enter your phone number">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="guests" class="text-light">Number of Guests</label>
-                        <select id="guests" name="guests" required>
-                            <option value="">Select number of guests</option>
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                            <option value="5+">5+</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="attendance" class="text-light">Will you attend?</label>
-                        <select id="attendance" name="attendance" required>
-                            <option value="">Select your response</option>
-                            <option value="yes">Joyfully Accepts</option>
-                            <option value="no">Regretfully Declines</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="message" class="text-light">Message to the Couple</label>
-                        <textarea id="message" name="message" rows="4" placeholder="Write your message here..."></textarea>
-                    </div>
-                    
-                    <button type="submit" class="btn btn-submit">
-                        <i class="fas fa-paper-plane"></i> Submit RSVP
-                    </button>
-                </form>
-            </div>
-        </section>
-
-        <!-- Footer -->
-        <footer class="footer burnt-orange-bg">
-            <div class="container">
-                <p class="footer-text text-light">Made with <i class="fas fa-heart"></i> for Ijeoma & Kenechi</p>
-                <p class="footer-date text-light">July 25th, 2026</p>
+                <div class="footer-credit">
+                    Website made by <a href="https://www.instagram.com/ketvertagency/" target="_blank">KetVert Agency</a>
+                </div>
             </div>
         </footer>
+    </main>
+
+    <!-- Lightbox for Gallery -->
+    <div id="lightbox" class="hidden">
+        <span class="close-lightbox">&times;</span>
+        <img src="" alt="Enlarged Photo" class="lightbox-img">
     </div>
 
-    <!-- Confetti Container -->
-    <div id="confetti-container"></div>
-
-    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap" async defer></script>
+    <!-- Scripts -->
     <script src="script.js"></script>
 </body>
 </html>

@@ -1,432 +1,496 @@
-// Wedding Date Configuration
-const WEDDING_DATE = new Date('July 25, 2026 09:00:00').getTime();
-
-// DOM Elements
-const introOverlay = document.getElementById('intro-overlay');
-const introVideo = document.getElementById('intro-video');
-const mainContent = document.getElementById('main-content');
-const musicToggle = document.getElementById('music-toggle');
-const backgroundMusic = document.getElementById('background-music');
-const themeToggle = document.getElementById('theme-toggle');
-const rsvpForm = document.getElementById('rsvp-form');
-const mapContainer = document.getElementById('map-container');
-const mapMessage = document.getElementById('map-message');
-const scratchCanvas = document.getElementById('scratch-canvas');
-const confettiContainer = document.getElementById('confetti-container');
-
-let isMusicPlaying = false;
-let isDayTheme = true;
-let isFormSubmitted = false;
-
-// Initialize
 document.addEventListener('DOMContentLoaded', () => {
-    initializeIntro();
-    initializeCountdown();
-    initializeScratchCard();
-    initializeThemeToggle();
-    initializeMusicToggle();
-    initializeForm();
-    initializeScrollAnimations();
-});
+    // --- UTILITIES ---
+    const select = (el) => document.querySelector(el);
+    const selectAll = (el) => document.querySelectorAll(el);
 
-// Intro Video Handler
-function initializeIntro() {
-    introOverlay.addEventListener('click', () => {
-        // Play video
-        introVideo.play().catch(error => {
-            console.log('Video play error:', error);
-            // If video fails, just fade out overlay
-            fadeOutOverlay();
+    // --- STATE ---
+    const state = {
+        introPlayed: false,
+        scratchedCount: 0,
+        isMusicPlaying: false,
+        theme: 'day',
+        currentCarouselSlide: 0
+    };
+
+    // --- INTRO VIDEO ---
+    const introScreen = select('#intro-screen');
+    const introVideo = select('#intro-video');
+    const skipBtn = select('#skip-video');
+    const mainSite = select('#main-site');
+    const topNav = select('#top-nav');
+    const musicBtn = select('#music-toggle');
+    const bgMusic = select('#bg-music');
+
+    const revealSite = () => {
+        if (state.introPlayed) return;
+        state.introPlayed = true;
+        
+        introScreen.style.transition = 'opacity 1s ease';
+        introScreen.style.opacity = '0';
+        
+        setTimeout(() => {
+            introScreen.classList.add('hidden');
+            mainSite.classList.remove('hidden');
+            topNav.classList.remove('hidden');
+            musicBtn.classList.remove('hidden');
+
+            // Trigger Hero Animations
+            const coupleNames = select('.couple-names');
+            coupleNames.style.transition = 'all 1s ease';
+            coupleNames.style.opacity = '1';
+            coupleNames.style.transform = 'translateY(0)';
+
+            setTimeout(() => {
+                select('.hero-ornament').style.opacity = '1';
+                select('.hero-ornament').style.transition = 'opacity 1s ease';
+            }, 500);
+
+            // Initial Confetti
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#FFD700', '#C9A84C', '#C0C0C0']
+            });
+
+            // Start Floating Petals
+            startPetals();
+
+            // Attempt Music
+            toggleMusic(true);
+        }, 1000);
+    };
+
+    // First interaction plays video
+    document.addEventListener('click', function startIntro() {
+        if (state.introPlayed) return;
+        
+        introVideo.play().catch(e => {
+            console.log("Autoplay blocked or error:", e);
+            revealSite();
         });
         
-        // Hide tap hint
-        const tapHint = document.querySelector('.tap-hint');
-        if (tapHint) {
-            tapHint.style.display = 'none';
-        }
+        // Show skip button after 2 seconds
+        setTimeout(() => skipBtn.classList.remove('hidden'), 2000);
         
-        // Wait for video to end or timeout
-        introVideo.onended = () => {
-            fadeOutOverlay();
+        document.removeEventListener('click', startIntro);
+    }, { once: true });
+
+    introVideo.onended = revealSite;
+    skipBtn.onclick = (e) => {
+        e.stopPropagation();
+        revealSite();
+    };
+
+    // Fallback reveal if video fails to play
+    const videoFallback = setTimeout(() => {
+        if (!state.introPlayed) revealSite();
+    }, 3500);
+
+    introVideo.onplay = () => clearTimeout(videoFallback);
+
+    // --- MUSIC TOGGLE ---
+    const toggleMusic = (play) => {
+        if (play) {
+            bgMusic.play().then(() => {
+                state.isMusicPlaying = true;
+                musicBtn.classList.add('playing');
+            }).catch(e => console.log("Music play error:", e));
+        } else {
+            bgMusic.pause();
+            state.isMusicPlaying = false;
+            musicBtn.classList.remove('playing');
+        }
+    };
+
+    musicBtn.onclick = () => toggleMusic(!state.isMusicPlaying);
+
+    // --- THEME TOGGLE ---
+    const themeToggle = select('#theme-toggle');
+    themeToggle.onclick = () => {
+        const body = document.body;
+        const isNight = body.classList.toggle('night-mode');
+        state.theme = isNight ? 'night' : 'day';
+        select('.theme-icon').textContent = isNight ? '☀️' : '🌙';
+        select('.theme-label').textContent = isNight ? 'Day' : 'Night';
+    };
+
+    // --- SCRATCH CARDS ---
+    const scratchCards = selectAll('.scratch-card');
+    const scratchReveal = select('#reveal-after-scratch');
+    const countdownSection = select('#countdown');
+
+    scratchCards.forEach(card => {
+        const canvas = card.querySelector('.scratch-canvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        let lastX, lastY;
+
+        // Init Canvas
+        const initCanvas = () => {
+            canvas.width = card.offsetWidth;
+            canvas.height = card.offsetHeight;
+
+            // Gold Shimmer Gradient
+            const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            grad.addColorStop(0, '#C9A84C');
+            grad.addColorStop(0.5, '#FFD700');
+            grad.addColorStop(1, '#C9A84C');
+
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.globalCompositeOperation = 'destination-out';
         };
-        
-        // Fallback: if video is very short or doesn't exist
-        setTimeout(() => {
-            if (!introOverlay.classList.contains('fade-out')) {
-                fadeOutOverlay();
+
+        const getPos = (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        };
+
+        const scratch = (x, y) => {
+            ctx.beginPath();
+            ctx.arc(x, y, 25, 0, Math.PI * 2);
+            ctx.fill();
+            checkProgress();
+        };
+
+        const checkProgress = () => {
+            if (card.dataset.completed === 'true') return;
+            const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+            let transparent = 0;
+            for (let i = 0; i < pixels.length; i += 4) {
+                if (pixels[i + 3] === 0) transparent++;
             }
-        }, 5000);
+            const percent = (transparent / (pixels.length / 4)) * 100;
+            if (percent > 60) {
+                card.dataset.completed = 'true';
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                state.scratchedCount++;
+                if (state.scratchedCount === 3) {
+                    revealDate();
+                }
+            }
+        };
+
+        canvas.addEventListener('mousedown', (e) => { isDrawing = true; const p = getPos(e); scratch(p.x, p.y); });
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDrawing) return;
+            const p = getPos(e);
+            scratch(p.x, p.y);
+        });
+        window.addEventListener('mouseup', () => isDrawing = false);
+
+        canvas.addEventListener('touchstart', (e) => { isDrawing = true; const p = getPos(e); scratch(p.x, p.y); });
+        canvas.addEventListener('touchmove', (e) => {
+            if (!isDrawing) return;
+            e.preventDefault();
+            const p = getPos(e);
+            scratch(p.x, p.y);
+        });
+        window.addEventListener('touchend', () => isDrawing = false);
+
+        // Delay initialization until visible
+        const obs = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    initCanvas();
+                    obs.unobserve(canvas);
+                }
+            });
+        });
+        obs.observe(canvas);
     });
-}
 
-function fadeOutOverlay() {
-    introOverlay.classList.add('fade-out');
-    
-    setTimeout(() => {
-        introOverlay.style.display = 'none';
-        mainContent.classList.remove('hidden');
-        
-        // Start confetti celebration
-        startConfetti();
-        
-        // Auto-play music if user interacted
-        if (isMusicPlaying) {
-            backgroundMusic.play().catch(e => console.log('Audio autoplay blocked'));
-        }
-    }, 1000);
-}
+    const revealDate = () => {
+        scratchReveal.classList.remove('hidden');
 
-// Countdown Timer
-function initializeCountdown() {
-    function updateCountdown() {
-        const now = new Date().getTime();
-        const distance = WEDDING_DATE - now;
+        // Sustainable Confetti
+        const end = Date.now() + (5 * 1000);
+        const colors = ['#FFD700', '#C9A84C', '#C0C0C0'];
+
+        (function frame() {
+            confetti({
+                particleCount: 3,
+                angle: 60,
+                spread: 55,
+                origin: { x: 0 },
+                colors: colors
+            });
+            confetti({
+                particleCount: 3,
+                angle: 120,
+                spread: 55,
+                origin: { x: 1 },
+                colors: colors
+            });
+
+            if (Date.now() < end) {
+                requestAnimationFrame(frame);
+            }
+        }());
+
+        // Reveal Countdown
+        setTimeout(() => {
+            countdownSection.classList.remove('hidden');
+            countdownSection.scrollIntoView({ behavior: 'smooth' });
+            startCountdown();
+        }, 2000);
+    };
+
+    // --- ADD TO CALENDAR ---
+    const calendarBtn = select('#add-to-calendar');
+    calendarBtn.onclick = (e) => {
+        e.preventDefault();
+        const details = {
+            text: 'Holy Matrimony: Ijeoma & Kenechi',
+            dates: '20260725T080000Z/20260725T140000Z', // 9AM WAT is 8AM UTC
+            location: 'Catholic Church of the Transfiguration, VGC, Lagos, Nigeria',
+            details: 'Join us for the Holy Matrimony of Ijeoma and Kenechi.'
+        };
+        const url = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(details.text)}&dates=${details.dates}&details=${encodeURIComponent(details.details)}&location=${encodeURIComponent(details.location)}`;
+        window.open(url, '_blank');
+    };
+
+    // --- COUNTDOWN TIMER ---
+    const startCountdown = () => {
+        const weddingDate = new Date('July 25, 2026 09:00:00').getTime();
         
-        if (distance < 0) {
-            document.getElementById('days').textContent = '00';
-            document.getElementById('hours').textContent = '00';
-            document.getElementById('minutes').textContent = '00';
-            document.getElementById('seconds').textContent = '00';
+        const update = () => {
+            const now = new Date().getTime();
+            const diff = weddingDate - now;
+
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const secs = Math.floor((diff % (1000 * 60)) / 1000);
+
+            select('#days').textContent = String(days).padStart(2, '0');
+            select('#hours').textContent = String(hours).padStart(2, '0');
+            select('#minutes').textContent = String(mins).padStart(2, '0');
+            select('#seconds').textContent = String(secs).padStart(2, '0');
+        };
+
+        setInterval(update, 1000);
+        update();
+    };
+
+    // --- CAROUSEL ---
+    const track = select('#carousel-slots');
+    const slides = selectAll('.carousel-slide');
+    const nextBtn = select('.carousel-nav.next');
+    const prevBtn = select('.carousel-nav.prev');
+    const dotsNav = select('.carousel-dots');
+
+    // Create dots
+    slides.forEach((_, i) => {
+        const dot = document.createElement('div');
+        dot.classList.add('dot');
+        if (i === 0) dot.classList.add('active');
+        dot.addEventListener('click', () => moveToSlide(i));
+        dotsNav.appendChild(dot);
+    });
+
+    const moveToSlide = (index) => {
+        track.style.transform = `translateX(-${index * 100}%)`;
+        state.currentCarouselSlide = index;
+        selectAll('.dot').forEach((dot, i) => {
+            dot.classList.toggle('active', i === index);
+        });
+    };
+
+    nextBtn.onclick = () => {
+        let index = (state.currentCarouselSlide + 1) % slides.length;
+        moveToSlide(index);
+    };
+
+    prevBtn.onclick = () => {
+        let index = (state.currentCarouselSlide - 1 + slides.length) % slides.length;
+        moveToSlide(index);
+    };
+
+    // Auto play
+    let carouselInterval = setInterval(() => nextBtn.click(), 4000);
+    select('#moments-carousel').onmouseenter = () => clearInterval(carouselInterval);
+    select('#moments-carousel').onmouseleave = () => carouselInterval = setInterval(() => nextBtn.click(), 4000);
+
+    // --- RSVP FORM ---
+    const rsvpForm = select('#rsvp-form');
+    const rsvpSuccess = select('#rsvp-success');
+    const venueMap = select('#venue-map');
+    const holyMatrimony = select('#holy-matrimony');
+
+    rsvpForm.onsubmit = async (e) => {
+        e.preventDefault();
+        
+        const name = select('#guest-name').value;
+        const phone = select('#guest-phone').value;
+
+        if (!name || !phone) {
+            rsvpForm.classList.add('shake');
+            setTimeout(() => rsvpForm.classList.remove('shake'), 500);
             return;
         }
-        
-        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-        
-        document.getElementById('days').textContent = String(days).padStart(2, '0');
-        document.getElementById('hours').textContent = String(hours).padStart(2, '0');
-        document.getElementById('minutes').textContent = String(minutes).padStart(2, '0');
-        document.getElementById('seconds').textContent = String(seconds).padStart(2, '0');
-    }
-    
-    updateCountdown();
-    setInterval(updateCountdown, 1000);
-}
 
-// Scratch Card Functionality
-function initializeScratchCard() {
-    const ctx = scratchCanvas.getContext('2d');
-    const container = scratchCanvas.parentElement;
-    let isDrawing = false;
-    let isRevealed = false;
-    
-    // Set canvas size
-    function resizeCanvas() {
-        scratchCanvas.width = container.offsetWidth;
-        scratchCanvas.height = container.offsetHeight;
-        drawScratchCover();
-    }
-    
-    function drawScratchCover() {
-        // Create gold shimmer effect with hearts
-        const gradient = ctx.createLinearGradient(0, 0, scratchCanvas.width, scratchCanvas.height);
-        gradient.addColorStop(0, '#FFD700');
-        gradient.addColorStop(0.25, '#FFA500');
-        gradient.addColorStop(0.5, '#FFD700');
-        gradient.addColorStop(0.75, '#FFA500');
-        gradient.addColorStop(1, '#FFD700');
-        
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, scratchCanvas.width, scratchCanvas.height);
-        
-        // Add heart patterns
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-        for (let i = 0; i < 20; i++) {
-            const x = Math.random() * scratchCanvas.width;
-            const y = Math.random() * scratchCanvas.height;
-            const size = Math.random() * 20 + 10;
-            drawHeart(x, y, size);
-        }
-        
-        // Add shimmer text
-        ctx.font = 'bold 24px Lato';
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-        ctx.textAlign = 'center';
-        ctx.fillText('Scratch Here!', scratchCanvas.width / 2, scratchCanvas.height / 2);
-    }
-    
-    function drawHeart(x, y, size) {
-        ctx.beginPath();
-        ctx.moveTo(x, y - size / 2);
-        ctx.bezierCurveTo(x, y - size, x - size, y - size, x - size, y - size / 2);
-        ctx.bezierCurveTo(x - size, y, x, y + size, x, y + size * 1.5);
-        ctx.bezierCurveTo(x, y + size, x + size, y, x + size, y - size / 2);
-        ctx.bezierCurveTo(x + size, y - size, x, y - size, x, y - size / 2);
-        ctx.fill();
-    }
-    
-    function scratch(x, y) {
-        ctx.globalCompositeOperation = 'destination-out';
-        ctx.beginPath();
-        ctx.arc(x, y, 30, 0, Math.PI * 2);
-        ctx.fill();
-    }
-    
-    function checkRevealPercentage() {
-        if (isRevealed) return;
-        
-        const imageData = ctx.getImageData(0, 0, scratchCanvas.width, scratchCanvas.height);
-        const pixels = imageData.data;
-        let transparentPixels = 0;
-        
-        for (let i = 3; i < pixels.length; i += 4) {
-            if (pixels[i] === 0) transparentPixels++;
-        }
-        
-        const percentage = (transparentPixels / (pixels.length / 4)) * 100;
-        
-        if (percentage > 40) {
-            isRevealed = true;
-            scratchCanvas.style.transition = 'opacity 1s ease';
-            scratchCanvas.style.opacity = '0';
-            setTimeout(() => {
-                scratchCanvas.style.display = 'none';
-            }, 1000);
-        }
-    }
-    
-    // Mouse events
-    scratchCanvas.addEventListener('mousedown', (e) => {
-        isDrawing = true;
-        const rect = scratchCanvas.getBoundingClientRect();
-        scratch(e.clientX - rect.left, e.clientY - rect.top);
-    });
-    
-    scratchCanvas.addEventListener('mousemove', (e) => {
-        if (!isDrawing) return;
-        const rect = scratchCanvas.getBoundingClientRect();
-        scratch(e.clientX - rect.left, e.clientY - rect.top);
-        checkRevealPercentage();
-    });
-    
-    scratchCanvas.addEventListener('mouseup', () => {
-        isDrawing = false;
-    });
-    
-    scratchCanvas.addEventListener('mouseleave', () => {
-        isDrawing = false;
-    });
-    
-    // Touch events
-    scratchCanvas.addEventListener('touchstart', (e) => {
-        isDrawing = true;
-        e.preventDefault();
-        const rect = scratchCanvas.getBoundingClientRect();
-        const touch = e.touches[0];
-        scratch(touch.clientX - rect.left, touch.clientY - rect.top);
-    });
-    
-    scratchCanvas.addEventListener('touchmove', (e) => {
-        if (!isDrawing) return;
-        e.preventDefault();
-        const rect = scratchCanvas.getBoundingClientRect();
-        const touch = e.touches[0];
-        scratch(touch.clientX - rect.left, touch.clientY - rect.top);
-        checkRevealPercentage();
-    });
-    
-    scratchCanvas.addEventListener('touchend', () => {
-        isDrawing = false;
-    });
-    
-    // Initialize
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-}
-
-// Theme Toggle (Day/Night)
-function initializeThemeToggle() {
-    themeToggle.addEventListener('click', () => {
-        document.body.classList.toggle('night-theme');
-        isDayTheme = !isDayTheme;
-        
-        const icon = themeToggle.querySelector('i');
-        if (isDayTheme) {
-            icon.classList.remove('fa-moon');
-            icon.classList.add('fa-sun');
-        } else {
-            icon.classList.remove('fa-sun');
-            icon.classList.add('fa-moon');
-        }
-    });
-}
-
-// Music Toggle
-function initializeMusicToggle() {
-    musicToggle.addEventListener('click', () => {
-        if (isMusicPlaying) {
-            backgroundMusic.pause();
-            musicToggle.classList.remove('playing');
-        } else {
-            backgroundMusic.play().catch(e => console.log('Audio play error:', e));
-            musicToggle.classList.add('playing');
-        }
-        isMusicPlaying = !isMusicPlaying;
-    });
-}
-
-// RSVP Form Handler
-function initializeForm() {
-    rsvpForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        
-        // Get form data
+        // Netlify submission
         const formData = new FormData(rsvpForm);
-        const data = Object.fromEntries(formData);
-        
-        // Simulate form submission (you can replace with actual API call)
-        console.log('RSVP Data:', data);
-        
-        // Show success message
-        alert('Thank you for your RSVP! We look forward to celebrating with you!');
-        
-        // Reset form
-        rsvpForm.reset();
-        
-        // Reveal map
-        revealMap();
-        
-        // Trigger confetti
-        startConfetti();
-    });
-}
+        fetch("/", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams(formData).toString(),
+        })
+        .then(() => {
+            rsvpForm.classList.add('hidden');
+            rsvpSuccess.classList.remove('hidden');
 
-function revealMap() {
-    isFormSubmitted = true;
-    mapMessage.style.display = 'none';
-    mapContainer.classList.remove('hidden');
-    
-    // Initialize Google Maps
-    initMap();
-}
+            confetti({
+                particleCount: 150,
+                spread: 100,
+                origin: { y: 0.6 },
+                colors: ['#FFD700', '#C9A84C', '#C0C0C0']
+            });
 
-// Google Maps Integration
-function initMap() {
-    // Venue coordinates (Catholic Church of Transfiguration VGC, Lagos)
-    const venueLocation = { lat: 6.4474, lng: 3.5878 }; // Approximate coordinates for VGC Lagos
-    
-    const map = new google.maps.Map(document.getElementById('map'), {
-        zoom: 15,
-        center: venueLocation,
-        styles: [
-            {
-                featureType: 'all',
-                elementType: 'geometry',
-                stylers: [{ color: '#f5f5f5' }]
-            },
-            {
-                featureType: 'poi',
-                elementType: 'labels.icon',
-                stylers: [{ visibility: 'off' }]
-            }
-        ]
-    });
-    
-    const marker = new google.maps.Marker({
-        position: venueLocation,
-        map: map,
-        title: 'Catholic Church of Transfiguration VGC'
-    });
-    
-    const infoWindow = new google.maps.InfoWindow({
-        content: `
-            <div style="padding: 10px;">
-                <h3 style="color: #CC5500; margin-bottom: 5px;">Catholic Church of Transfiguration</h3>
-                <p style="margin: 0;">VGC, Lagos, Nigeria</p>
-                <p style="margin: 5px 0 0 0;"><strong>Time:</strong> 9:00 AM</p>
-            </div>
-        `
-    });
-    
-    marker.addListener('click', () => {
-        infoWindow.open(map, marker);
-    });
-}
-
-// Confetti Effect
-function startConfetti() {
-    const colors = ['#FFD700', '#C0C0C0']; // Gold and Silver
-    
-    for (let i = 0; i < 100; i++) {
-        createConfetti(colors);
-    }
-}
-
-function createConfetti(colors) {
-    const confetti = document.createElement('div');
-    confetti.classList.add('confetti');
-    
-    // Random color
-    confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
-    
-    // Random position
-    confetti.style.left = Math.random() * 100 + 'vw';
-    
-    // Random animation duration
-    const duration = Math.random() * 3 + 2;
-    confetti.style.animationDuration = duration + 's';
-    
-    // Random delay
-    confetti.style.animationDelay = Math.random() * 2 + 's';
-    
-    // Random size
-    const size = Math.random() * 10 + 5;
-    confetti.style.width = size + 'px';
-    confetti.style.height = size + 'px';
-    
-    // Add silver class randomly
-    if (Math.random() > 0.5) {
-        confetti.classList.add('silver');
-    }
-    
-    confettiContainer.appendChild(confetti);
-    
-    // Remove after animation
-    setTimeout(() => {
-        confetti.remove();
-    }, (duration + 2) * 1000);
-}
-
-// Scroll Animations
-function initializeScrollAnimations() {
-    const observerOptions = {
-        threshold: 0.1,
-        rootMargin: '0px 0px -50px 0px'
+            setTimeout(() => {
+                holyMatrimony.classList.remove('hidden');
+                venueMap.classList.remove('hidden');
+                holyMatrimony.scrollIntoView({ behavior: 'smooth' });
+            }, 600);
+        })
+        .catch((error) => alert(error));
     };
-    
+
+    // --- PHOTO UPLOADS & LOCALSTORAGE ---
+    const handleFileUpload = (input, previewContainer, storageKey) => {
+        input.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const dataUrl = event.target.result;
+
+                    // Update UI
+                    previewContainer.innerHTML = `<img src="${dataUrl}" style="width:100%; height:100%; object-fit:cover;">`;
+
+                    // Persist (Try/Catch for QuotaExceededError)
+                    try {
+                        localStorage.setItem(storageKey, dataUrl);
+                    } catch (e) {
+                        console.warn("Local storage full, could not save image.");
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        previewContainer.addEventListener('click', () => input.click());
+    };
+
+    // Load Persisted Images
+    const loadPersisted = () => {
+        // Carousel
+        selectAll('.carousel-slide').forEach((slide, i) => {
+            const input = slide.querySelector('.file-input');
+            const key = `carousel_${i}`;
+            handleFileUpload(input, slide, key);
+
+            const saved = localStorage.getItem(key);
+            if (saved) slide.innerHTML = `<img src="${saved}" style="width:100%; height:100%; object-fit:cover;">`;
+        });
+
+        // Gallery
+        selectAll('.gallery-slot').forEach((slot, i) => {
+            const input = slot.querySelector('.file-input');
+            const key = `gallery_${i}`;
+
+            input.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        const dataUrl = event.target.result;
+                        slot.innerHTML = `<img src="${dataUrl}" style="width:100%; height:100%; object-fit:cover;">`;
+                        try { localStorage.setItem(key, dataUrl); } catch (e) {}
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            const saved = localStorage.getItem(key);
+            if (saved) slot.innerHTML = `<img src="${saved}" style="width:100%; height:100%; object-fit:cover;">`;
+
+            slot.addEventListener('click', (e) => {
+                const img = slot.querySelector('img');
+                if (img) {
+                    e.stopPropagation();
+                    openLightbox(img.src);
+                } else {
+                    input.click();
+                }
+            });
+        });
+
+        // Final Thank You
+        const finalSlot = select('.final-image-slot');
+        const finalInput = finalSlot.querySelector('.file-input');
+        handleFileUpload(finalInput, finalSlot, 'final_thankyou');
+        const savedFinal = localStorage.getItem('final_thankyou');
+        if (savedFinal) finalSlot.innerHTML = `<img src="${savedFinal}" style="width:100%; height:100%; object-fit:cover;">`;
+    };
+
+    loadPersisted();
+
+    // --- LIGHTBOX ---
+    const lightbox = select('#lightbox');
+    const lightboxImg = select('.lightbox-img');
+    const closeLightbox = select('.close-lightbox');
+
+    const openLightbox = (src) => {
+        lightboxImg.src = src;
+        lightbox.classList.remove('hidden');
+    };
+
+    closeLightbox.onclick = () => lightbox.classList.add('hidden');
+    lightbox.onclick = (e) => { if (e.target === lightbox) lightbox.classList.add('hidden'); };
+
+    // --- FLOATING PETALS ---
+    const startPetals = () => {
+        const createPetal = () => {
+            const petal = document.createElement('div');
+            petal.className = 'petal';
+            petal.innerHTML = '✦';
+            petal.style.left = Math.random() * 100 + 'vw';
+            petal.style.fontSize = (Math.random() * 10 + 10) + 'px';
+            petal.style.opacity = Math.random();
+            petal.style.transition = `transform ${Math.random() * 5 + 5}s linear, top ${Math.random() * 5 + 5}s linear`;
+
+            document.body.appendChild(petal);
+
+            setTimeout(() => {
+                petal.style.transform = `rotate(${Math.random() * 360}deg) translateX(${Math.random() * 100 - 50}px)`;
+                petal.style.top = '110vh';
+            }, 10);
+
+            setTimeout(() => petal.remove(), 10000);
+        };
+
+        setInterval(createPetal, 500);
+    };
+
+    // --- SCROLL ANIMATIONS ---
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
-                entry.target.style.opacity = '1';
-                entry.target.style.transform = 'translateY(0)';
+                entry.target.classList.add('visible');
             }
         });
-    }, observerOptions);
-    
-    // Observe all sections
-    document.querySelectorAll('section').forEach(section => {
-        section.style.opacity = '0';
-        section.style.transform = 'translateY(30px)';
-        section.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-        observer.observe(section);
-    });
-}
+    }, { threshold: 0.1 });
 
-// Smooth scroll for navigation
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-            target.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-            });
-        }
+    selectAll('section, .gallery-slot, .form-section').forEach(el => {
+        el.classList.add('fade-up');
+        observer.observe(el);
     });
 });
-
-// Handle Google Maps API callback
-window.initMap = initMap;
