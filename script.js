@@ -82,10 +82,12 @@ document.addEventListener('DOMContentLoaded', () => {
         revealSite();
     };
 
-    // Fallback reveal
-    setTimeout(() => {
+    // Fallback reveal if video fails to play
+    const videoFallback = setTimeout(() => {
         if (!state.introPlayed) revealSite();
     }, 3500);
+
+    introVideo.onplay = () => clearTimeout(videoFallback);
 
     // --- MUSIC TOGGLE ---
     const toggleMusic = (play) => {
@@ -320,6 +322,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const rsvpForm = select('#rsvp-form');
     const rsvpSuccess = select('#rsvp-success');
     const venueMap = select('#venue-map');
+    const holyMatrimony = select('#holy-matrimony');
 
     rsvpForm.onsubmit = async (e) => {
         e.preventDefault();
@@ -352,8 +355,9 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             setTimeout(() => {
+                holyMatrimony.classList.remove('hidden');
                 venueMap.classList.remove('hidden');
-                venueMap.scrollIntoView({ behavior: 'smooth' });
+                holyMatrimony.scrollIntoView({ behavior: 'smooth' });
             }, 600);
         })
         .catch((error) => alert(error));
@@ -401,15 +405,30 @@ document.addEventListener('DOMContentLoaded', () => {
         selectAll('.gallery-slot').forEach((slot, i) => {
             const input = slot.querySelector('.file-input');
             const key = `gallery_${i}`;
-            handleFileUpload(input, slot, key);
+
+            input.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        const dataUrl = event.target.result;
+                        slot.innerHTML = `<img src="${dataUrl}" style="width:100%; height:100%; object-fit:cover;">`;
+                        try { localStorage.setItem(key, dataUrl); } catch (e) {}
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
 
             const saved = localStorage.getItem(key);
             if (saved) slot.innerHTML = `<img src="${saved}" style="width:100%; height:100%; object-fit:cover;">`;
 
             slot.addEventListener('click', (e) => {
-                if (slot.querySelector('img')) {
+                const img = slot.querySelector('img');
+                if (img) {
                     e.stopPropagation();
-                    openLightbox(slot.querySelector('img').src);
+                    openLightbox(img.src);
+                } else {
+                    input.click();
                 }
             });
         });
